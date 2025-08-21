@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "428531662464",
+    "project_id": "oi-chat-f2ad0",
+    "storage_bucket": "oi-chat-f2ad0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:428531662464:android:4eaf10f6005605014d7065",
+        "android_client_info": {
+          "package_name": "br.com.inottec.oichat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8jEfQYSZc4XtEr4Mo1UenDBdjqdhAlgk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
