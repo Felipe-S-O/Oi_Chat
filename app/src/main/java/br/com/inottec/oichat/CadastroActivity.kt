@@ -4,11 +4,13 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import br.com.inottec.oichat.databinding.ActivityCadastroBinding
+import br.com.inottec.oichat.model.Usuario
 import br.com.inottec.oichat.utils.exibirMensagem
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
+import com.google.firebase.firestore.FirebaseFirestore
 
 class CadastroActivity : AppCompatActivity() {
 
@@ -21,9 +23,14 @@ class CadastroActivity : AppCompatActivity() {
     private lateinit var email: String
     private lateinit var senha: String
 
-    val firebaseAuth by lazy {
+    private val firebaseAuth by lazy {
         //Instanciando o Firebase Auth
         FirebaseAuth.getInstance()
+    }
+
+    private val firestore by lazy {
+        //Instanciando o Firebase Store
+        FirebaseFirestore.getInstance()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,7 +42,66 @@ class CadastroActivity : AppCompatActivity() {
         // inicializarEventosDeClique()
         inicializarEventosDeClique()
     }
-    //TODO: Validar campos
+
+    private fun inicializarEventosDeClique() {
+        //Configurando o evento de clique do botão cadastrar
+        binding.buttonCadastrar.setOnClickListener {
+            //Chamando a função de validar campos
+            if (validarCampos()) {
+                cadastrarUsuario(nome, email, senha)
+            }
+        }
+    }
+
+    private fun cadastrarUsuario(nome: String, email: String, senha: String) {
+        firebaseAuth.createUserWithEmailAndPassword(email, senha)
+            .addOnCompleteListener { resultado ->
+                if (resultado.isSuccessful) {
+                    //Salvar dados do usuário no Firestore
+                    //id, nome, email, foto
+                    val idUsuario = resultado.result.user?.uid
+                    if (idUsuario != null) {
+                        val usuario = Usuario(
+                            id = idUsuario,
+                            nome = nome,
+                            email = email,
+                            foto = ""
+                        )
+                        salvarUsuarioFirestore(usuario)
+                    }
+                }
+            }.addOnFailureListener { erro ->
+                try {
+                    throw erro
+                } catch (erroSenhaFraca: FirebaseAuthWeakPasswordException) {
+                    erroSenhaFraca.printStackTrace()
+                    exibirMensagem("Senha fraca, digite uma senha com mais caracteres especiais")
+
+                } catch (erroEmailExistente: FirebaseAuthUserCollisionException) {
+                    erroEmailExistente.printStackTrace()
+                    exibirMensagem("E-mail já cadastrado")
+                } catch (erroCredenciaisInvalidas: FirebaseAuthInvalidCredentialsException) {
+                    erroCredenciaisInvalidas.printStackTrace()
+                    exibirMensagem("E-mail inválido")
+                }
+            }
+    }
+
+    private fun salvarUsuarioFirestore(usuario: Any) {
+        firestore.collection("usuarios")
+            .document(usuario.toString())
+            .set(usuario)
+            .addOnSuccessListener {
+                exibirMensagem("Usuário cadastrado com sucesso")
+
+                //Chamando tela principal
+                startActivity(
+                    Intent(applicationContext, MainActivity::class.java)
+                )
+            }.addOnFailureListener {
+                exibirMensagem("Erro ao cadastrar usuário")
+            }
+    }
 
     private fun validarCampos(): Boolean {
         nome = binding.editNome.text.toString()
@@ -67,16 +133,6 @@ class CadastroActivity : AppCompatActivity() {
         }
     }
 
-    private fun inicializarEventosDeClique() {
-        //Configurando o evento de clique do botão cadastrar
-        binding.buttonCadastrar.setOnClickListener {
-            //Chamando a função de validar campos
-            if (validarCampos()) {
-                cadastrarUsuario(nome, email, senha)
-            }
-        }
-    }
-
     private fun inicializarToolbar() {
         //Configurando a Toolbar
         val toolbar = binding.includeToolbar.tbPrincipal
@@ -90,29 +146,5 @@ class CadastroActivity : AppCompatActivity() {
     }
 }
 
-private fun CadastroActivity.cadastrarUsuario(nome: String, email: String, senha: String) {
-    firebaseAuth.createUserWithEmailAndPassword(email, senha).addOnCompleteListener { resultado ->
-        if (resultado.isSuccessful) {
-            //Chamando mesagem de sucesso
-            exibirMensagem("Cadastro realizado com sucesso")
-            //Chamando tela principal
-            startActivity(
-                Intent(applicationContext, MainActivity::class.java)
-            )
-        }
-    }.addOnFailureListener { erro ->
-        try {
-            throw erro
-        } catch (erroSenhaFraca: FirebaseAuthWeakPasswordException) {
-            erroSenhaFraca.printStackTrace()
-            exibirMensagem("Senha fraca, digite uma senha com mais caracteres especiais")
 
-        } catch (erroEmailExistente: FirebaseAuthUserCollisionException) {
-            erroEmailExistente.printStackTrace()
-            exibirMensagem("E-mail já cadastrado")
-        } catch (erroCredenciaisInvalidas: FirebaseAuthInvalidCredentialsException) {
-            erroCredenciaisInvalidas.printStackTrace()
-            exibirMensagem("E-mail inválido")
-        }
-    }
-}
+
