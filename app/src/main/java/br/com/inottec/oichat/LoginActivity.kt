@@ -17,6 +17,8 @@ class LoginActivity : AppCompatActivity() {
         inicializarEventosClique()
     }
 
+    //TODO: Validar campos
+
     private fun inicializarEventosClique() {
         binding.textCadastro.setOnClickListener {
             val intent = Intent(this, CadastroActivity::class.java)
