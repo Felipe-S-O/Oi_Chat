@@ -8,7 +8,9 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuProvider
+import br.com.inottec.oichat.adapters.ViewPagerAdapter
 import br.com.inottec.oichat.databinding.ActivityMainBinding
+import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
 
 
@@ -30,6 +32,29 @@ class MainActivity : AppCompatActivity() {
 
         //Configurando a Toolbar
         inicializarToolbar()
+
+        //Configurando o muneTab com viewPager
+        inicializarNavegacaoAbas()
+
+    }
+
+    private fun inicializarNavegacaoAbas() {
+        val tabLayout = binding.tabLayoutPrincipal
+        val viewPager = binding.viewPagerPrincipal
+
+        //Criar adapter
+        val abas = listOf("Conversas", "Contatos")
+
+        viewPager.adapter = ViewPagerAdapter(
+            abas, supportFragmentManager, lifecycle
+        )
+
+        // Configurando o TabLayout
+//        tabLayout.isTabIndicatorFullWidth = true
+        //Configurando o TabLayout com o ViewPager
+        TabLayoutMediator(tabLayout, viewPager) { aba, position ->
+            aba.text = abas[position]
+        }.attach()
     }
 
     private fun inicializarToolbar() {
