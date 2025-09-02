@@ -9,5 +9,10 @@
     <style name="ActionOverflowButton" parent="Widget.AppCompat.ActionButton.Overflow">
         <item name="tint">@color/white</item>
     </style>
+
+    <style name="Circulo">
+       <item name="cornerSize">20%</item>
+    </style>
+
     <style name="Theme.OiChat" parent="Base.Theme.OiChat" />
 </resources>
