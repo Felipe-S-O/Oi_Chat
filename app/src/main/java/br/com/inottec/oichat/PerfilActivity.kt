@@ -61,42 +61,27 @@ class PerfilActivity : AppCompatActivity() {
     private fun recuperarDadosUsuario() {
         val idUsuario = firebaseAuth.currentUser?.uid
 
-        firestore.collection("usuarios")
-            .whereEqualTo("id", idUsuario)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    val documento = querySnapshot.documents.first()
+        if (idUsuario != null) {
+            firestore
+                .collection("usuarios")
+                .document(idUsuario)
+                .get()
+                .addOnSuccessListener { documentSnapshot ->
+                    val dadosUsuario = documentSnapshot.data
 
-                        firestore
-                            .collection("usuarios")
-                            .document(documento.id)
-                            .get()
-                            .addOnSuccessListener { documentSnapshot ->
-                                val dadosUsuario = documentSnapshot.data
+                    if (!dadosUsuario.isNullOrEmpty()) {
+                        val nomeUsuario = dadosUsuario["nome"].toString()
+                        val fotoUsuario = dadosUsuario["foto"].toString()
 
-                                if (!dadosUsuario.isNullOrEmpty()) {
-                                    val nomeUsuario = dadosUsuario["nome"].toString()
-                                    val fotoUsuario = dadosUsuario["foto"].toString()
-
-                                    binding.editaPefil.setText(nomeUsuario)
-                                    if (!fotoUsuario.isEmpty()){
-                                        Picasso.get()
-                                            .load(fotoUsuario)
-                                            .into(binding.imageView2)
-                                    }
-                                }
-                            }
-                            .addOnFailureListener { e ->
-                                exibirMensagem("Erro ao recuperar dados do usuário: ${e.message}")
-                            }
-
+                        binding.editaPefil.setText(nomeUsuario)
+                        if (!fotoUsuario.isEmpty()) {
+                            Picasso.get()
+                                .load(fotoUsuario)
+                                .into(binding.imageView2)
+                        }
+                    }
                 }
-            }
-            .addOnFailureListener { e ->
-
-            }
-
+        }
     }
 
 
@@ -118,7 +103,7 @@ class PerfilActivity : AppCompatActivity() {
         if (idUsuario != null) {
             storage
                 .getReference("foto")
-                .child("usuario")
+                .child("usuarios")
                 .child("id")
                 .child("perfil.jpg")
                 .putFile(uri)
@@ -131,7 +116,6 @@ class PerfilActivity : AppCompatActivity() {
                             //salvando a url no firestore
                             val dados = mapOf(
                                 "foto" to uri.toString(),
-                                "nome" to binding.editaPefil.text.toString()
                             )
 
                             atualizarDadosPerfil(idUsuario, dados)
@@ -147,28 +131,15 @@ class PerfilActivity : AppCompatActivity() {
         idUsuario: String,
         dados: Map<String, Any>
     ) {
-
-        firestore.collection("usuarios")
-            .whereEqualTo("id", idUsuario)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    val documento = querySnapshot.documents.first()
-                    firestore.collection("usuarios")
-                        .document(documento.id)
-                        .update(dados)
-                        .addOnSuccessListener {
-                            exibirMensagem("Perfil atualizado com sucesso")
-                        }
-                        .addOnFailureListener { e ->
-                            exibirMensagem("Erro ao atualizar perfil")
-                        }
+            firestore.collection("usuarios")
+                .document(idUsuario)
+                .update(dados)
+                .addOnSuccessListener {
+                    exibirMensagem("Perfil atualizado com sucesso")
                 }
-            }
-            .addOnFailureListener { e ->
-                exibirMensagem("Erro na busca: ${e.message}")
-                binding.editaPefil.setText(e.message)
-            }
+                .addOnFailureListener { e ->
+                    exibirMensagem("Erro ao atualizar perfil")
+                }
     }
 
 

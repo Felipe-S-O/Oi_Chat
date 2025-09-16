@@ -59,15 +59,13 @@ class CadastroActivity : AppCompatActivity() {
                 if (resultado.isSuccessful) {
                     //Salvar dados do usuário no Firestore
                     //id, nome, email, foto
+
                     val idUsuario = resultado.result.user?.uid
-                    if (idUsuario != null) {
+                    if( idUsuario != null ){
                         val usuario = Usuario(
-                            id = idUsuario,
-                            nome = nome,
-                            email = email,
-                            foto = ""
+                            idUsuario, nome, email
                         )
-                        salvarUsuarioFirestore(usuario)
+                        salvarUsuarioFirestore( usuario )
                     }
                 }
             }.addOnFailureListener { erro ->
@@ -87,19 +85,18 @@ class CadastroActivity : AppCompatActivity() {
             }
     }
 
-    private fun salvarUsuarioFirestore(usuario: Any) {
-        firestore.collection("usuarios")
-            .document(usuario.toString())
-            .set(usuario)
+    private fun salvarUsuarioFirestore(usuario: Usuario) {
+        firestore
+            .collection("usuarios")
+            .document( usuario.id )
+            .set( usuario )
             .addOnSuccessListener {
-                exibirMensagem("Usuário cadastrado com sucesso")
-
-                //Chamando tela principal
+                exibirMensagem("Sucesso ao fazer seu cadastro")
                 startActivity(
                     Intent(applicationContext, MainActivity::class.java)
                 )
             }.addOnFailureListener {
-                exibirMensagem("Erro ao cadastrar usuário")
+                exibirMensagem("Erro ao fazer seu cadastro")
             }
     }
 
