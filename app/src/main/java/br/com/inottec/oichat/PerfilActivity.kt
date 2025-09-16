@@ -4,16 +4,16 @@ package br.com.inottec.oichat
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
 import br.com.inottec.oichat.databinding.ActivityPerfilBinding
 import br.com.inottec.oichat.utils.exibirMensagem
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import com.squareup.picasso.Picasso
 
 class PerfilActivity : AppCompatActivity() {
     private val binding by lazy {
@@ -27,45 +27,18 @@ class PerfilActivity : AppCompatActivity() {
         FirebaseAuth.getInstance()
     }
 
+    private val firestore by lazy {
+        FirebaseFirestore.getInstance()
+    }
+
     private val storage by lazy {
         FirebaseStorage.getInstance()
     }
 
-    //setando imagem da galeria na imageview
-    private val galeria = registerForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        if (uri != null){
-            binding.imageView2.setImageURI(uri)
-            uploadImagemStorage(uri)
-        }else{
-            exibirMensagem("Nenhuma imagem selecionada")
-        }
-    }
 
-    private fun uploadImagemStorage(uri: Uri) {
-        // foto -> usuario -> idUsuario -> perfil.jpg
-        val idUsuario = firebaseAuth.currentUser?.uid
-        if (idUsuario != null){
-
-        storage
-            .getReference("foto")
-            .child("usuario")
-            .child("id")
-            .child("perfil.jpg")
-            .putFile(uri)
-            .addOnSuccessListener {
-                exibirMensagem("Imagem enviada com sucesso")
-            }
-            .addOnFailureListener {
-                exibirMensagem("Erro ao enviar imagem")
-            }
-        }
-    }
-
-    //setando imagem da galeria na imageview
-    private fun abrirGaleria() {
-        galeria.launch("image/*")
+    override fun onStart() {
+        super.onStart()
+        recuperarDadosUsuario()
     }
 
 
@@ -83,20 +56,157 @@ class PerfilActivity : AppCompatActivity() {
         inicializarEventosCliques()
 
     }
+
+
+    private fun recuperarDadosUsuario() {
+        val idUsuario = firebaseAuth.currentUser?.uid
+
+        firestore.collection("usuarios")
+            .whereEqualTo("id", idUsuario)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    val documento = querySnapshot.documents.first()
+
+                        firestore
+                            .collection("usuarios")
+                            .document(documento.id)
+                            .get()
+                            .addOnSuccessListener { documentSnapshot ->
+                                val dadosUsuario = documentSnapshot.data
+
+                                if (!dadosUsuario.isNullOrEmpty()) {
+                                    val nomeUsuario = dadosUsuario["nome"].toString()
+                                    val fotoUsuario = dadosUsuario["foto"].toString()
+
+                                    binding.editaPefil.setText(nomeUsuario)
+                                    if (!fotoUsuario.isEmpty()){
+                                        Picasso.get()
+                                            .load(fotoUsuario)
+                                            .into(binding.imageView2)
+                                    }
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                exibirMensagem("Erro ao recuperar dados do usuário: ${e.message}")
+                            }
+
+                }
+            }
+            .addOnFailureListener { e ->
+
+            }
+
+    }
+
+
+    //setando imagem da galeria na imageview
+    private val galeria = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            binding.imageView2.setImageURI(uri)
+            uploadImagemStorage(uri)
+        } else {
+            exibirMensagem("Nenhuma imagem selecionada")
+        }
+    }
+
+    private fun uploadImagemStorage(uri: Uri) {
+        // foto -> usuario -> idUsuario -> perfil.jpg
+        val idUsuario = firebaseAuth.currentUser?.uid
+        if (idUsuario != null) {
+            storage
+                .getReference("foto")
+                .child("usuario")
+                .child("id")
+                .child("perfil.jpg")
+                .putFile(uri)
+                .addOnSuccessListener { task ->
+                    exibirMensagem("Imagem enviada com sucesso")
+                    task.metadata
+                        ?.reference
+                        ?.downloadUrl
+                        ?.addOnSuccessListener { uri ->
+                            //salvando a url no firestore
+                            val dados = mapOf(
+                                "foto" to uri.toString(),
+                                "nome" to binding.editaPefil.text.toString()
+                            )
+
+                            atualizarDadosPerfil(idUsuario, dados)
+
+                        }
+                }.addOnFailureListener {
+                    exibirMensagem("Erro ao enviar imagem")
+                }
+        }
+    }
+
+    private fun atualizarDadosPerfil(
+        idUsuario: String,
+        dados: Map<String, Any>
+    ) {
+
+        firestore.collection("usuarios")
+            .whereEqualTo("id", idUsuario)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    val documento = querySnapshot.documents.first()
+                    firestore.collection("usuarios")
+                        .document(documento.id)
+                        .update(dados)
+                        .addOnSuccessListener {
+                            exibirMensagem("Perfil atualizado com sucesso")
+                        }
+                        .addOnFailureListener { e ->
+                            exibirMensagem("Erro ao atualizar perfil")
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                exibirMensagem("Erro na busca: ${e.message}")
+                binding.editaPefil.setText(e.message)
+            }
+    }
+
+
+    //setando imagem da galeria na imageview
+    private fun abrirGaleria() {
+        galeria.launch("image/*")
+    }
+
     private fun inicializarEventosCliques() {
         binding.floatingActionButton.setOnClickListener {
-            if (temPermissaoGaleria){
+            if (temPermissaoGaleria) {
                 abrirGaleria()
-            }else{
+            } else {
                 exibirMensagem("Permissão de galeria negada")
                 solicitarPermissoes()
             }
         }
 
+        binding.buttonAtualizarPerfil.setOnClickListener {
+            val nomeUsuario = binding.editaPefil.text.toString()
+
+            if (!nomeUsuario.isEmpty()) {
+                val idUsuario = firebaseAuth.currentUser?.uid
+
+                if (idUsuario != null) {
+                    val dados = mapOf(
+                        "nome" to binding.editaPefil.text.toString()
+                    )
+                    atualizarDadosPerfil(idUsuario, dados)
+                }
+            } else {
+                exibirMensagem("Preencha o campo nome")
+            }
+        }
     }
 
     //Solicitar multiplas permissões
-   private val gerenciadorPermissoes = registerForActivityResult(
+    private val gerenciadorPermissoes = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissoes ->
         temPermissaoCamera = permissoes[Manifest.permission.CAMERA] ?: false
@@ -143,5 +253,7 @@ class PerfilActivity : AppCompatActivity() {
         }
     }
 }
+
+
 
 
