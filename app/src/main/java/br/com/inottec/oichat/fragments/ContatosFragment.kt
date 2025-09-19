@@ -1,5 +1,6 @@
 package br.com.inottec.oichat.fragments
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -7,11 +8,13 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
+import br.com.inottec.oichat.MensagensActivity
 import br.com.inottec.oichat.R
 import br.com.inottec.oichat.adapters.ContatosAdapter
 import br.com.inottec.oichat.databinding.ActivityPerfilBinding
 import br.com.inottec.oichat.databinding.FragmentContatosBinding
 import br.com.inottec.oichat.model.Usuario
+import br.com.inottec.oichat.utils.Constantes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -37,7 +40,13 @@ class ContatosFragment : Fragment() {
 
         binding = FragmentContatosBinding.inflate(inflater, container, false)
 
-        adapter = ContatosAdapter()
+        adapter = ContatosAdapter{ usuario ->
+            val intent = Intent(context, MensagensActivity::class.java)
+            intent.putExtra("dadosDestinatario", usuario)
+            intent.putExtra("origem", Constantes.ORIGEM_CONTATO)
+            startActivity(intent)
+        }
+
         binding.rvContatos.adapter = adapter
         binding.rvContatos.layoutManager = LinearLayoutManager(context)
         binding.rvContatos.addItemDecoration(

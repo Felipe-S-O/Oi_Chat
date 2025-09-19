@@ -7,7 +7,7 @@ import br.com.inottec.oichat.databinding.ItemContatosBinding
 import br.com.inottec.oichat.model.Usuario
 import com.squareup.picasso.Picasso
 
-class ContatosAdapter : RecyclerView.Adapter<ContatosAdapter.ContatosViewHolder>() {
+class ContatosAdapter(  private val onClick: (Usuario) -> Unit) : RecyclerView.Adapter<ContatosAdapter.ContatosViewHolder>() {
 
     private var listaContatos = emptyList<Usuario>()
 
@@ -24,6 +24,11 @@ class ContatosAdapter : RecyclerView.Adapter<ContatosAdapter.ContatosViewHolder>
             Picasso.get()
                 .load(usuario.foto)
                 .into(binding.imageContatoFoto)
+
+            // Evento de clique no item da lista
+            binding.clItemContato.setOnClickListener {
+                onClick(usuario)
+            }
         }
     }
 
