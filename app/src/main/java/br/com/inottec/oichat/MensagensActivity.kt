@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import br.com.inottec.oichat.databinding.ActivityMensagensBinding
 import br.com.inottec.oichat.model.Usuario
 import br.com.inottec.oichat.utils.Constantes
+import com.squareup.picasso.Picasso
 
 class MensagensActivity : AppCompatActivity() {
 
@@ -16,9 +17,29 @@ class MensagensActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_mensagens)
+        setContentView(binding.root)
 
         recuperarDadosUsuarioDestinatario()
+        inicializarToolbar()
+    }
+
+    private fun inicializarToolbar() {
+        //Configurando a Toolbar
+        val toolbar = binding.tbMensagens
+        //Setando a Toolbar como a barra de ação
+        setSupportActionBar(toolbar)
+        //Configurando o titulo da Toolbar
+        supportActionBar?.apply {
+            title = ""
+            if (dadosDestinatario != null){
+                binding.textNome.text = dadosDestinatario!!.nome
+                Picasso.get()
+                    .load(dadosDestinatario!!.foto)
+                    .into(binding.imageFotoPerfil)
+
+            }
+            setDisplayHomeAsUpEnabled(true)
+        }
     }
 
     private fun recuperarDadosUsuarioDestinatario() {

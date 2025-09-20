@@ -2,12 +2,14 @@ package br.com.inottec.oichat.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import br.com.inottec.oichat.databinding.ItemContatosBinding
 import br.com.inottec.oichat.model.Usuario
 import com.squareup.picasso.Picasso
 
-class ContatosAdapter(  private val onClick: (Usuario) -> Unit) : RecyclerView.Adapter<ContatosAdapter.ContatosViewHolder>() {
+class ContatosAdapter(private val onClick: (Usuario) -> Unit) :
+    Adapter<ContatosAdapter.ContatosViewHolder>() {
 
     private var listaContatos = emptyList<Usuario>()
 
@@ -16,9 +18,9 @@ class ContatosAdapter(  private val onClick: (Usuario) -> Unit) : RecyclerView.A
         notifyDataSetChanged()
     }
 
-    inner  class  ContatosViewHolder(
+    inner class ContatosViewHolder(
         private val binding: ItemContatosBinding
-    ) : RecyclerView.ViewHolder(binding.root) {
+    ) : ViewHolder(binding.root) {
         fun bind(usuario: Usuario) {
             binding.textContatoNome.text = usuario.nome
             Picasso.get()
@@ -36,12 +38,12 @@ class ContatosAdapter(  private val onClick: (Usuario) -> Unit) : RecyclerView.A
         parent: ViewGroup,
         viewType: Int
     ): ContatosViewHolder {
-        val layoutInflater = LayoutInflater.from(parent.context)
-      val itemView = ItemContatosBinding.inflate(
-          layoutInflater,
-          parent,
-          false
-      )
+        val inflater = LayoutInflater.from(parent.context)
+        val itemView = ItemContatosBinding.inflate(
+            inflater,
+            parent,
+            false
+        )
         return ContatosViewHolder(itemView)
     }
 

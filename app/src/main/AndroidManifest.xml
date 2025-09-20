@@ -26,11 +26,12 @@
             android:exported="false" />
         <activity
             android:name=".MensagensActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".PerfilActivity"
             android:exported="false"
-            android:parentActivityName=".PerfilActivity" />
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".CadastroActivity"
             android:exported="false"
