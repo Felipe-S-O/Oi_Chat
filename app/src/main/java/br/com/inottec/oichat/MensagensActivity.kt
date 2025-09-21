@@ -2,6 +2,7 @@ package br.com.inottec.oichat
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import br.com.inottec.oichat.databinding.ActivityMensagensBinding
 import br.com.inottec.oichat.model.Mensagem
@@ -10,6 +11,8 @@ import br.com.inottec.oichat.utils.Constantes
 import br.com.inottec.oichat.utils.exibirMensagem
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
 import com.squareup.picasso.Picasso
 
 class MensagensActivity : AppCompatActivity() {
@@ -26,6 +29,8 @@ class MensagensActivity : AppCompatActivity() {
     private val binding by lazy {
         ActivityMensagensBinding.inflate(layoutInflater)
     }
+
+    private lateinit var listenerRegistration: ListenerRegistration
     private var dadosDestinatario: Usuario? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +40,45 @@ class MensagensActivity : AppCompatActivity() {
         recuperarDadosUsuarioDestinatario()
         inicializarToolbar()
         inicializarEventosDeClique()
+        inicializarListenners()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        listenerRegistration.remove()
+    }
+
+    private fun inicializarListenners() {
+        val idUsuarioRemetente = firebaseAuth.currentUser?.uid
+        val idUsuarioDestinatario = dadosDestinatario?.id
+
+        if (idUsuarioRemetente != null && idUsuarioDestinatario != null) {
+            listenerRegistration = firestore
+                .collection(Constantes.BD_MENSAGENS)
+                .document(idUsuarioRemetente)
+                .collection(idUsuarioDestinatario)
+                .orderBy("data", Query.Direction.ASCENDING)
+                .addSnapshotListener { querySnapshot, erro ->
+                    if (erro != null) {
+                        exibirMensagem("Erro ao carregar mensagens")
+                    }
+
+                    val listarMensagens = mutableListOf<Mensagem>()
+                    val documentos = querySnapshot?.documents
+
+                    documentos?.forEach { documento ->
+                        val mensagem = documento.toObject(Mensagem::class.java)
+                        if (mensagem != null) {
+                            listarMensagens.add(mensagem)
+                            Log.i("Mensagem: ", mensagem.mensagem)
+                        }
+                    }
+
+                    if (listarMensagens.isNotEmpty()) {
+//                        binding.recyclerMensagens.adapter = MensagensAdapter(listarMensagens)
+                    }
+                }
+        }
     }
 
     private fun inicializarEventosDeClique() {
@@ -78,7 +122,7 @@ class MensagensActivity : AppCompatActivity() {
 
             //Salvar para o remetente
             salvarMensagemFirestore(idUsuarioRemetente, idUsuarioDestinatario, mensagem)
-            
+
             //Salvar para o destinatário
             salvarMensagemFirestore(idUsuarioDestinatario, idUsuarioRemetente, mensagem)
 
